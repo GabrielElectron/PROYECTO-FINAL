@@ -1,0 +1,1 @@
+ -c -mcpu=$(MP_PROCESSOR_OPTION)  -omf=elf -DXPRJ_default=$(CND_CONF)    -Wa,-g,--no-relax$(MP_EXTRA_AS_POST)  -mdfp="${DFP_DIR}/xc16"C:\Users\wintt\OneDrive\Escritorio\PROYECTO DE TESIS\PROYRCTO FINAL\PROGRAMAS_DSPIC\PROGRAMA_PRUEBA\PRUEBA.X\mcc_generated_files\system\src\where_was_i.s
