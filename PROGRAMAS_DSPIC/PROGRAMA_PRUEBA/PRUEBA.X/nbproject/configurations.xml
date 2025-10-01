@@ -53,7 +53,7 @@
           </logicalFolder>
         </logicalFolder>
       </logicalFolder>
-      <itemPath>main.c</itemPath>
+      <itemPath>PRUEBA1.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
@@ -297,6 +297,8 @@
         <property key="memories.programmemory" value="true"/>
         <property key="memories.programmemory.ranges" value="0-15eff"/>
         <property key="poweroptions.powerenable" value="true"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/Users/wintt/OneDrive/Escritorio/PROYECTO DE TESIS/PROYRCTO FINAL/PROGRAMAS_DSPIC/PROGRAMA_PRUEBA/PRUEBA.X/debug/default/PRUEBA_ptg"/>
         <property key="programmerToGoImageName" value="PRUEBA_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
