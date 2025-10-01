@@ -27,6 +27,9 @@
 int main(void)
 {
     SYSTEM_Initialize();
+    
+    TRISBbits.TRISB4=0;     // Configuramos el pin 4 del puerto B como salida 
+    LATBbits.LATB4=1;       // Configuramos el pin 4 del puerto B en alto
 
     while(1)
     {
