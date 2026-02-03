@@ -1,1 +1,0 @@
- -c -mcpu=$(MP_PROCESSOR_OPTION)      -g -D__DEBUG   -mno-eds-warn  -omf=elf -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -O0 -msmart-io=1 -Wall -msfr-warn=off    -mdfp="${DFP_DIR}/xc16"C:\Users\wintt\OneDrive\Escritorio\PROYECTO DE TESIS\PROYRCTO FINAL\PROGRAMAS_DSPIC\PROGRAMA_PRUEBA\PRUEBA.X\mcc_generated_files\system\src\pins.c
