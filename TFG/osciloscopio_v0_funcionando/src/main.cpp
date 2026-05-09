@@ -1,11 +1,11 @@
-/*
+﻿/*
   Proyecto: Osciloscopio con Raspberry Pi Pico 2 W + AD7606
-  Versión: v0 funcionando
+  Versi├│n: v0 funcionando
   Archivo original: AD_DMA_PWM_OK1.cpp
 
-  Descripción:
-  Esta versión corresponde al código funcional actual del proyecto.
-  Se conserva como referencia estable antes de comenzar la refactorización.
+  Descripci├│n:
+  Esta versi├│n corresponde al c├│digo funcional actual del proyecto.
+  Se conserva como referencia estable antes de comenzar la refactorizaci├│n.
 */
 
 #include <Arduino.h>
@@ -28,7 +28,7 @@
 
 
 
-// ===== Parámetros =====
+// ===== Par├ímetros =====
 static const uint32_t SPI_HZ   = 48000000;   // ya lo probaste estable
 static const uint32_t FS_HZ    = 32000;     // 100 kS/s exactos
 static const uint32_t PULSE_US = 2;          // pulso CONVST activo-bajo ~1us
@@ -36,7 +36,7 @@ static const uint32_t PULSE_US = 2;          // pulso CONVST activo-bajo ~1us
 static const int NBYTES = 16;
 
 static const uint32_t PERIOD_US = (1000000u / FS_HZ);   // 10 us si FS_HZ=100000
-static const uint32_t MIN_DT_US = (PERIOD_US * 7) / 10; // 70% del período (7 us)
+static const uint32_t MIN_DT_US = (PERIOD_US * 7) / 10; // 70% del per├¡odo (7 us)
 static volatile uint32_t last_irq_us = 0;
 
 // BINARIOS
@@ -46,8 +46,8 @@ static const uint16_t FRAMES_PER_PKT = 128;
 static uint32_t seq = 0;
 
 
-// Buffer circular (solo para tener un “último frame” y stats)
-// (Si querés guardar muchos, subí a 1024/2048; cada frame son 16 bytes)
+// Buffer circular (solo para tener un ÔÇ£├║ltimo frameÔÇØ y stats)
+// (Si quer├®s guardar muchos, sub├¡ a 1024/2048; cada frame son 16 bytes)
 static const int RING_FRAMES = 1024;
 static uint8_t ring[RING_FRAMES][NBYTES];
 
@@ -92,13 +92,13 @@ static inline void spi_dma_start16(uint8_t *dst16) {
   dma_channel_set_write_addr(dma_tx, (void *)&hw->dr, false);
   dma_channel_set_trans_count(dma_tx, NBYTES, false);
 
-  // Start simultáneo
+  // Start simult├íneo
   uint32_t mask = (1u << dma_rx) | (1u << dma_tx);
   dma_start_channel_mask(mask);
 }
 
 // ===== IRQ callback BUSY =====
-// Dispara en flanco de bajada (fin de conversión) => arrancamos DMA para leer 16 bytes
+// Dispara en flanco de bajada (fin de conversi├│n) => arrancamos DMA para leer 16 bytes
 static void busy_irq(uint gpio, uint32_t events) {
   if (gpio != BUSY) return;
   if ((events & GPIO_IRQ_EDGE_FALL) == 0) return;
@@ -110,7 +110,7 @@ static void busy_irq(uint gpio, uint32_t events) {
 
   last_irq_us = now_us;
 
-  // Si el DMA anterior todavía está ocupado, contamos overrun (perdimos una muestra)
+  // Si el DMA anterior todav├¡a est├í ocupado, contamos overrun (perdimos una muestra)
   if (dma_channel_is_busy(dma_rx) || dma_channel_is_busy(dma_tx)) {
     overruns++;
     return;
@@ -148,7 +148,7 @@ static void setup_convst_pwm(uint32_t fs_hz, uint32_t pulse_us) {
       }
       // divisor en "ticks/16"
       uint32_t div16 = (uint32_t)div_int * 16u + (uint32_t)div_frac;
-      if (div16 < 16u) continue; // no debería pasar
+      if (div16 < 16u) continue; // no deber├¡a pasar
 
       // top+1 = sys_hz * 16 / (div16 * fs)
       uint64_t denom = (uint64_t)div16 * (uint64_t)fs_hz;
@@ -273,17 +273,17 @@ void setup() {
   // CS bajo permanente (AD7606 seleccionado siempre)
   gpio_put(PIN_CS, 0);
 
-  // 1) Configurá PWM primero (todavía sin IRQ)
+  // 1) Configur├í PWM primero (todav├¡a sin IRQ)
     setup_convst_pwm(FS_HZ, PULSE_US);
 
-    // 2) Limpia posibles flags pendientes en BUSY (por si había ruido)
+    // 2) Limpia posibles flags pendientes en BUSY (por si hab├¡a ruido)
     gpio_acknowledge_irq(BUSY, GPIO_IRQ_EDGE_FALL);
 
     //Serial.print("BUSY initial="); Serial.println(gpio_get(BUSY));
     delay(10);
     //Serial.print("BUSY after10ms="); Serial.println(gpio_get(BUSY));
 
-    // 3) Recién ahora habilitá IRQ
+    // 3) Reci├®n ahora habilit├í IRQ
     gpio_set_irq_enabled_with_callback(BUSY, GPIO_IRQ_EDGE_FALL, true, &busy_irq);
 
   //Serial.print("SPI_HZ="); Serial.print(SPI_HZ);
@@ -308,7 +308,7 @@ void loop() {
   Serial.write((uint8_t*)&FRAMES_PER_PKT, 2);
 
   // Payload: FRAMES_PER_PKT * 16 bytes
-  // Mandamos desde ring en orden. Cada frame ya está en big-endian si leés del AD7606 así.
+  // Mandamos desde ring en orden. Cada frame ya est├í en big-endian si le├®s del AD7606 as├¡.
   for (uint16_t i = 0; i < FRAMES_PER_PKT; i++) {
     uint32_t idx = (rd_idx + i) % RING_FRAMES;
     Serial.write(ring[idx], NBYTES);
