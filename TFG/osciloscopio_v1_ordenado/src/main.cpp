@@ -28,7 +28,7 @@ void setup() {
   adquisicion_init();
   comunicacion_init();
 
-  Serial.println("Osciloscopio v1 - Inicio correcto");
+  //Serial.println("Osciloscopio v1 - Inicio correcto");
 }
 
 void loop() {
