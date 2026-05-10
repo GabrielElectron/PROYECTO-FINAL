@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "ad7606.h"
 #include "spi_ad7606.h"
+#include "dma_ad7606.h"
 
 // =====================================================
 // PROGRAMA PRINCIPAL - OSCILOSCOPIO V1 ORDENADO
@@ -20,6 +21,7 @@ void setup() {
   ad7606_reset();
   ad7606_select();
   spi_ad7606_init();
+  dma_ad7606_init();
 
   Serial.println("Osciloscopio v1 - Inicio correcto");
 }
