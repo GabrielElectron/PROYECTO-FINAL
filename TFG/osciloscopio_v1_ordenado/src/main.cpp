@@ -1,8 +1,10 @@
 #include <Arduino.h>
+
 #include "ad7606.h"
 #include "spi_ad7606.h"
 #include "dma_ad7606.h"
 #include "adquisicion.h"
+#include "comunicacion.h"
 
 // =====================================================
 // PROGRAMA PRINCIPAL - OSCILOSCOPIO V1 ORDENADO
@@ -20,14 +22,15 @@ void setup() {
 
   ad7606_init_pins();
   ad7606_reset();
-  ad7606_select();
   spi_ad7606_init();
   dma_ad7606_init();
+  ad7606_select();
   adquisicion_init();
+  comunicacion_init();
 
   Serial.println("Osciloscopio v1 - Inicio correcto");
 }
 
 void loop() {
-  delay(1000);
+  comunicacion_update();
 }
