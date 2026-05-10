@@ -2,6 +2,8 @@ import serial
 import struct
 import time
 
+from parser_ad7606 import parse_payload, channel_to_volts
+
 PORT = "COM9"
 BAUD = 2000000
 
@@ -81,6 +83,10 @@ def main():
             print("Timeout leyendo payload")
             continue
 
+        channels_raw = parse_payload(payload, frames)
+        ch1_raw = channels_raw[0]
+        ch1_volts = channel_to_volts(ch1_raw, full_scale_volts=5.0)
+
         # Ignoramos los primeros paquetes porque pueden llegar desfasados
         # al abrir el puerto o al sincronizar por primera vez.
         if packet_count > warmup_packets and last_seq is not None:
@@ -110,7 +116,9 @@ def main():
                 "| Seq:", seq,
                 "| Frames:", frames,
                 "| Payload:", len(payload),
-                "| Lost total:", lost_total
+                "| Lost total:", lost_total,
+                "| CH1 raw min/max:", min(ch1_raw), max(ch1_raw),
+                "| CH1 V min/max:", round(min(ch1_volts), 3), round(max(ch1_volts), 3)
             )
 
 
