@@ -1,17 +1,17 @@
-﻿# Osciloscopio v0 - Versi├│n funcionando
+﻿# Osciloscopio v0 - Versión funcionando
 
-Esta carpeta contiene la versi├│n original del proyecto que se encuentra funcionando correctamente.
+Esta carpeta contiene la versión original del proyecto que se encuentra funcionando correctamente.
 
 ## Objetivo
 
-Mantener una copia estable del c├│digo original para poder comparar con futuras versiones y volver atr├ís si aparece alg├║n problema durante la reestructuraci├│n.
+Mantener una copia estable del código original para poder comparar con futuras versiones y volver atrás si aparece algún problema durante la reestructuración.
 
 ## Estado
 
-- C├│digo funcionando.
+- Código funcionando.
 - No modificar directamente.
-- Usar como referencia para la nueva versi├│n refactorizada.
+- Usar como referencia para la nueva versión refactorizada.
 
 ## Notas
 
-La nueva versi├│n ordenada del proyecto se desarrollar├í en otra carpeta, para evitar romper esta versi├│n estable.
+La nueva versión ordenada del proyecto se desarrollará en otra carpeta, para evitar romper esta versión estable.
