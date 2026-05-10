@@ -24,6 +24,9 @@ static const uint32_t SPI_HZ   = 48000000;
 static const uint32_t FS_HZ    = 32000;
 static const uint32_t PULSE_US = 2;
 
+static const uint32_t PERIOD_US = (1000000u / FS_HZ);
+static const uint32_t MIN_DT_US = (PERIOD_US * 7) / 10;
+
 // ===== Datos AD7606 =====
 static const int AD7606_CHANNELS = 8;
 static const int BYTES_PER_CHANNEL = 2;
