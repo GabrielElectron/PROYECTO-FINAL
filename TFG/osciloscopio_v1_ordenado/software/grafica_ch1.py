@@ -6,6 +6,7 @@ import serial
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtWidgets
+from mediciones import calcular_mediciones
 
 
 # =====================================================
@@ -27,6 +28,7 @@ ADC_SCALE = V_RANGE / 32768.0
 
 MAX_POINTS = 2000
 
+FS_HZ = 32000
 
 # =====================================================
 # READER SERIAL EN HILO SEPARADO
@@ -205,15 +207,23 @@ class ScopeCH1(QtWidgets.QMainWindow):
 
         self.curve.setData(x, y)
 
-        vmin = float(np.min(y))
-        vmax = float(np.max(y))
-        vpp = vmax - vmin
+        med = calcular_mediciones(y, FS_HZ)
+
+        vmax = med["vmax"]
+        vmin = med["vmin"]
+        vpp = med["vpp"]
+        vrms = med["vrms_ac"]
+        vmedio = med["vmedio"]
+        frecuencia = med["frecuencia"]
 
         self.text.setText(
             f"CH1\n"
             f"Vmax: {vmax:.3f} V\n"
             f"Vmin: {vmin:.3f} V\n"
             f"Vpp: {vpp:.3f} V\n"
+            f"Vmedio: {vmedio:.3f} V\n"
+            f"Vrms : {vrms:.3f} V\n"
+            f"Freq: {frecuencia:.2f} Hz\n"
             f"Seq: {self.last_seq}\n"
             f"Lost: {self.lost_packets}"
         )
