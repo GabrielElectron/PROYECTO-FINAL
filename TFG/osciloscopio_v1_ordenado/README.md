@@ -51,6 +51,11 @@ Versión probada en hardware real.
 | `RING_FRAMES` | 1024 | Tamaño del buffer circular |
 | Serial | 2 Mbps | Comunicación USB Serial |
 
+## Rango de entrada AD7606
+
+El firmware actual configura el pin `RANGE` en alto:
+
+
 ## Estructura del proyecto
 
 ```txt

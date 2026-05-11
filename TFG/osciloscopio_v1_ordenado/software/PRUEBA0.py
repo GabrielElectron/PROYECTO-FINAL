@@ -20,7 +20,7 @@ CH = CH_PHY + CH_RMS # canales que maneja la UI
 BYTES_PER_FRAME = 16          # 8ch * int16 = 16 bytes/frame
 MAX_FRAMES = 4096
 
-V_RANGE = 5.0
+V_RANGE = 10.0
 ADC_SCALE = V_RANGE / 32768.0
 
 FREQ_MAX_HZ = 50000.0

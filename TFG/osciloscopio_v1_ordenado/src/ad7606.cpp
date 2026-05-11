@@ -36,7 +36,7 @@ void ad7606_init_pins() {
   // - AD7606 deseleccionado
   // - RANGE en bajo, igual que en la versión v0 funcionando
   ad7606_deselect();
-  ad7606_set_range(false);
+  ad7606_set_range(true);
 }
 
 void ad7606_reset() {
