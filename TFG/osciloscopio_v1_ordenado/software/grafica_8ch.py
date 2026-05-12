@@ -154,6 +154,7 @@ class Scope8CH(QtWidgets.QMainWindow):
         # Gráfica principal
         self.plot = pg.PlotWidget()
         self.main_layout.addWidget(self.plot, stretch=1)
+        self.running = True
 
         # Panel derecho + botón lateral de abrir/cerrar
         self.right_container = self.create_right_container()
@@ -249,6 +250,12 @@ class Scope8CH(QtWidgets.QMainWindow):
         separator.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         layout.addWidget(separator)
 
+        self.btn_run_stop = QtWidgets.QPushButton("RUN")
+        self.btn_run_stop.setObjectName("run_stop_button")
+        self.btn_run_stop.setFixedHeight(42)
+        self.btn_run_stop.clicked.connect(self.toggle_run_stop)
+        layout.addWidget(self.btn_run_stop)
+
         layout.addStretch()
 
         return panel
@@ -262,6 +269,53 @@ class Scope8CH(QtWidgets.QMainWindow):
             self.side_panel.show()
             self.btn_toggle_panel.setText(">>")
             self.btn_toggle_panel.setToolTip("Ocultar panel")
+
+    def toggle_run_stop(self):
+        self.running = not self.running
+
+        if self.running:
+            self.btn_run_stop.setText("RUN")
+            self.btn_run_stop.setStyleSheet("""
+                QPushButton#run_stop_button {
+                    background-color: #145a32;
+                    color: white;
+                    border: 1px solid #2ecc71;
+                    border-radius: 6px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    padding: 6px;
+                }
+
+                QPushButton#run_stop_button:hover {
+                    background-color: #196f3d;
+                }
+
+                QPushButton#run_stop_button:pressed {
+                    background-color: #0b3d22;
+                }
+            """)
+        else:
+            self.btn_run_stop.setText("STOP")
+            self.btn_run_stop.setStyleSheet("""
+                QPushButton#run_stop_button {
+                    background-color: #7b241c;
+                    color: white;
+                    border: 1px solid #e74c3c;
+                    border-radius: 6px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    padding: 6px;
+                }
+
+                QPushButton#run_stop_button:hover {
+                    background-color: #922b21;
+                }
+
+                QPushButton#run_stop_button:pressed {
+                    background-color: #641e16;
+            }
+            
+        """)
 
     def create_right_container(self):
         container = QtWidgets.QFrame()
@@ -298,6 +352,24 @@ class Scope8CH(QtWidgets.QMainWindow):
 
             QPushButton:pressed {
                 background-color: #505050;
+            }
+                                            
+            QPushButton#run_stop_button {
+                background-color: #145a32;
+                color: white;
+                border: 1px solid #2ecc71;
+                border-radius: 6px;
+                font-size: 18px;
+                font-weight: bold;
+                padding: 6px;
+            }
+
+            QPushButton#run_stop_button:hover {
+                background-color: #196f3d;
+            }
+
+            QPushButton#run_stop_button:pressed {
+                background-color: #0b3d22;
             }
         """)
 
@@ -338,11 +410,17 @@ class Scope8CH(QtWidgets.QMainWindow):
         if self.packets <= WARMUP_PACKETS:
             self.last_seq = seq
             self.lost_packets = 0
+            if not self.running:
+                return
         else:
             if self.last_seq is not None and seq != self.last_seq + 1:
                 self.lost_packets += max(0, seq - self.last_seq - 1)
 
             self.last_seq = seq
+
+             # Si está en STOP, congelamos la pantalla.
+            if not self.running:
+                return
 
         # Conversión de cuentas ADC a voltios.
         data_volts = data_i16.astype(np.float32) * ADC_SCALE
