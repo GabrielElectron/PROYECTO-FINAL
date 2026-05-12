@@ -144,16 +144,30 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.wr = 0
         self.filled = False
 
+        # =========================
+
+        self.main_widget = QtWidgets.QWidget()
+        self.main_layout = QtWidgets.QHBoxLayout(self.main_widget)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+
+        # Gráfica principal
         self.plot = pg.PlotWidget()
-        self.setCentralWidget(self.plot)
+        self.main_layout.addWidget(self.plot, stretch=1)
+
+        # Panel derecho + botón lateral de abrir/cerrar
+        self.right_container = self.create_right_container()
+        self.main_layout.addWidget(self.right_container)
+
+        self.setCentralWidget(self.main_widget)
 
         self.plot.setBackground("k")
         self.plot.showGrid(x=True, y=True, alpha=0.25)
         self.plot.setTitle("Osciloscopio 8CH - Señales centradas en 0 V")
-        self.plot.setLabel("bottom", "Muestras")
+        self.plot.setLabel("bottom", "Tiempo", units="ms")
         self.plot.setTitle("CH1 a CH8 - Señales en tiempo real")
 
-        self.plot.setXRange(0, MAX_POINTS)
+        self.plot.setXRange(0, (MAX_POINTS / FS_HZ) * 1000)
         self.plot.setYRange(-10, 10)
         self.plot.enableAutoRange(x=False, y=False)
 
@@ -190,6 +204,118 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.reader = Reader(PORT, BAUD)
         self.reader.packet.connect(self.on_packet)
         self.reader.start()
+
+    def create_side_panel(self):
+        panel = QtWidgets.QFrame()
+        panel.setFixedWidth(260)
+        panel.setStyleSheet("""
+            QFrame {
+                background-color: #1e1e1e;
+                border-left: 2px solid #505050;
+            }
+            QLabel#panel_title {
+                color: #ffffff;
+                font-size: 20px;
+                font-weight: bold;
+                padding: 8px;
+            }
+            QLabel#panel_subtitle {
+                color: #bbbbbb;
+                font-size: 13px;
+                padding-left: 8px;
+                padding-bottom: 12px;
+            }
+            QFrame#separator {
+                background-color: #505050;
+                min-height: 1px;
+                max-height: 1px;
+            }
+        """)
+
+        layout = QtWidgets.QVBoxLayout(panel)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
+        title = QtWidgets.QLabel("OSC 8CH")
+        title.setObjectName("panel_title")
+        layout.addWidget(title)
+
+        subtitle = QtWidgets.QLabel("Panel auxiliar")
+        subtitle.setObjectName("panel_subtitle")
+        layout.addWidget(subtitle)
+
+        separator = QtWidgets.QFrame()
+        separator.setObjectName("separator")
+        separator.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        layout.addWidget(separator)
+
+        layout.addStretch()
+
+        return panel
+
+    def toggle_side_panel(self):
+        if self.side_panel.isVisible():
+            self.side_panel.hide()
+            self.btn_toggle_panel.setText("<<")
+            self.btn_toggle_panel.setToolTip("Mostrar panel")
+        else:
+            self.side_panel.show()
+            self.btn_toggle_panel.setText(">>")
+            self.btn_toggle_panel.setToolTip("Ocultar panel")
+
+    def create_right_container(self):
+        container = QtWidgets.QFrame()
+
+        layout = QtWidgets.QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Panel derecho principal
+        self.side_panel = self.create_side_panel()
+        layout.addWidget(self.side_panel)
+
+        # Barra angosta donde queda siempre visible el botón
+        self.panel_toggle_bar = QtWidgets.QFrame()
+        self.panel_toggle_bar.setFixedWidth(34)
+        self.panel_toggle_bar.setStyleSheet("""
+            QFrame {
+                background-color: #181818;
+                border-left: 1px solid #404040;
+            }
+
+            QPushButton {
+                background-color: #2c2c2c;
+                color: white;
+                border: 1px solid #606060;
+                border-radius: 4px;
+                font-size: 16px;
+                font-weight: bold;
+            }
+
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+
+            QPushButton:pressed {
+                background-color: #505050;
+            }
+        """)
+
+        toggle_layout = QtWidgets.QVBoxLayout(self.panel_toggle_bar)
+        toggle_layout.setContentsMargins(4, 6, 4, 0)
+        toggle_layout.setSpacing(0)
+
+        self.btn_toggle_panel = QtWidgets.QPushButton(">>")
+        self.btn_toggle_panel.setFixedSize(26, 26)
+        self.btn_toggle_panel.setToolTip("Ocultar panel")
+        self.btn_toggle_panel.clicked.connect(self.toggle_side_panel)
+
+        toggle_layout.addWidget(self.btn_toggle_panel)
+        toggle_layout.addStretch()
+
+        layout.addWidget(self.panel_toggle_bar)
+
+        return container
 
     def update_ch1_text_position(self):
         x_range, y_range = self.plot.getViewBox().viewRange()
@@ -248,7 +374,7 @@ class Scope8CH(QtWidgets.QMainWindow):
         if y_all.shape[0] == 0:
             return
 
-        x = np.arange(y_all.shape[0])
+        x = (np.arange(y_all.shape[0]) / FS_HZ) * 1000.0
 
         # Graficamos los 8 canales todos centrados en Y = 0.
         for ch in range(CH_PHY):
