@@ -153,9 +153,12 @@ class Scope8CH(QtWidgets.QMainWindow):
 
         # Gráfica principal
         self.plot = pg.PlotWidget()
+        self.plot.getAxis("left").setStyle(showValues=False)
         self.main_layout.addWidget(self.plot, stretch=1)
         self.running = True
         self.ch1_coupling = "DC"
+        self.ch1_volts_per_div = 1.0
+        self.vertical_divisions = 8
 
         # Panel derecho + botón lateral de abrir/cerrar
         self.right_container = self.create_right_container()
@@ -170,7 +173,7 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.plot.setTitle("CH1 a CH8 - Señales en tiempo real")
 
         self.plot.setXRange(0, (MAX_POINTS / FS_HZ) * 1000)
-        self.plot.setYRange(-10, 10)
+        self.plot.setYRange(-4, 4, padding=0)
         self.plot.enableAutoRange(x=False, y=False)
 
         colors = [
@@ -194,6 +197,11 @@ class Scope8CH(QtWidgets.QMainWindow):
 
         self.text = pg.TextItem(color=(255, 255, 0), anchor=(0, 0))
         self.plot.addItem(self.text)
+
+        self.ch1_vdiv_text = pg.TextItem(color=(255, 255, 0), anchor=(0, 1))
+        self.ch1_vdiv_text.setText("CH1  1 V/div")
+        self.plot.addItem(self.ch1_vdiv_text)
+        self.apply_ch1_vertical_scale()
 
         # Cada vez que cambia el zoom o el desplazamiento,
         # actualizamos la posición del texto de CH1.
@@ -274,6 +282,32 @@ class Scope8CH(QtWidgets.QMainWindow):
             QRadioButton::indicator:hover {
                 border: 2px solid #ffffff;
             }
+            
+            QLabel#small_label {
+                color: #bbbbbb;
+                font-size: 13px;
+                padding-top: 8px;
+            }
+
+            QComboBox#vdiv_combo {
+                background-color: #202020;
+                color: white;
+                border: 1px solid #707070;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 14px;
+            }
+
+            QComboBox#vdiv_combo:hover {
+                border: 1px solid rgb(255, 255, 0);
+            }
+
+            QComboBox#vdiv_combo QAbstractItemView {
+                background-color: #202020;
+                color: white;
+                selection-background-color: #505050;
+            }
+                
         """)
 
         layout = QtWidgets.QVBoxLayout(panel)
@@ -329,6 +363,31 @@ class Scope8CH(QtWidgets.QMainWindow):
         ch1_layout.addWidget(self.rb_ch1_off)
 
         layout.addWidget(self.ch1_box)
+
+        vdiv_label = QtWidgets.QLabel("V/div")
+        vdiv_label.setObjectName("small_label")
+        ch1_layout.addWidget(vdiv_label)
+
+        self.combo_ch1_vdiv = QtWidgets.QComboBox()
+        self.combo_ch1_vdiv.setObjectName("vdiv_combo")
+
+        self.combo_ch1_vdiv.addItems([
+            "10 mV/div",
+            "20 mV/div",
+            "50 mV/div",
+            "100 mV/div",
+            "200 mV/div",
+            "500 mV/div",
+            "1 V/div",
+            "2 V/div",
+            "5 V/div",
+            "10 V/div",
+        ])
+
+        self.combo_ch1_vdiv.setCurrentText("1 V/div")
+        self.combo_ch1_vdiv.currentTextChanged.connect(self.update_ch1_volts_per_div)
+
+        ch1_layout.addWidget(self.combo_ch1_vdiv)
 
         layout.addStretch()
 
@@ -402,6 +461,36 @@ class Scope8CH(QtWidgets.QMainWindow):
             self.ch1_coupling = "OFF"
 
         print(f"CH1 coupling: {self.ch1_coupling}")
+
+    def update_ch1_volts_per_div(self, text):
+        if "mV/div" in text:
+            value_text = text.replace(" mV/div", "")
+            self.ch1_volts_per_div = float(value_text) / 1000.0
+
+        elif "V/div" in text:
+            value_text = text.replace(" V/div", "")
+            self.ch1_volts_per_div = float(value_text)
+
+        self.apply_ch1_vertical_scale()
+
+        self.ch1_vdiv_text.setText(
+            f"CH1  {self.format_volts_per_div(self.ch1_volts_per_div)}"
+        )
+
+        self.update_ch1_text_position()
+
+    def format_volts_per_div(self, value):
+        if value < 1.0:
+            return f"{value * 1000:g} mV/div"
+        else:
+            return f"{value:g} V/div"
+
+    def apply_ch1_vertical_scale(self):
+        self.ch1_vdiv_text.setText(
+            f"CH1  {self.format_volts_per_div(self.ch1_volts_per_div)}"
+        )
+
+        self.update_ch1_text_position()
 
     def create_right_container(self):
         container = QtWidgets.QFrame()
@@ -483,11 +572,19 @@ class Scope8CH(QtWidgets.QMainWindow):
         y_min, y_max = y_range
 
         margen_x = (x_max - x_min) * 0.015
-        margen_y = (y_max - y_min) * 0.04
+        margen_y_top = (y_max - y_min) * 0.04
+        margen_y_bottom = (y_max - y_min) * 0.015
 
+        # Mediciones CH1 arriba a la izquierda
         self.text.setPos(
             x_min + margen_x,
-            y_max - margen_y
+            y_max - margen_y_top
+        )
+
+        # Escala CH1 abajo a la izquierda
+        self.ch1_vdiv_text.setPos(
+            x_min + margen_x,
+            y_min + margen_y_bottom
         )
 
     def on_packet(self, data_i16, seq):
@@ -546,24 +643,27 @@ class Scope8CH(QtWidgets.QMainWindow):
         for ch in range(CH_PHY):
             y = y_all[:, ch]
 
-            # =========================
-            # Acoplamiento CH1
-            # =========================
             if ch == 0:
                 if self.ch1_coupling == "OFF":
-                    # Oculta la curva de CH1.
                     self.curves[ch].setData([], [])
                     continue
 
                 elif self.ch1_coupling == "AC":
-                    # Quita la componente continua.
                     y = y - np.mean(y)
 
                 elif self.ch1_coupling == "DC":
-                    # Señal normal.
                     pass
 
-            self.curves[ch].setData(x, y)
+                # Escala vertical SOLO para CH1.
+                # Convertimos volts a divisiones.
+                y_display = y / self.ch1_volts_per_div
+
+            else:
+            # Los demás canales quedan sin esta escala por ahora.
+                    # Usamos 1 V/div como referencia visual.
+                y_display = y / 1.0
+
+            self.curves[ch].setData(x, y_display)
 
 
         # =========================
