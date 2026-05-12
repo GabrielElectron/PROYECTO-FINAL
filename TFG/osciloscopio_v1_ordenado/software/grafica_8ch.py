@@ -155,6 +155,7 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.plot = pg.PlotWidget()
         self.main_layout.addWidget(self.plot, stretch=1)
         self.running = True
+        self.ch1_coupling = "DC"
 
         # Panel derecho + botón lateral de abrir/cerrar
         self.right_container = self.create_right_container()
@@ -231,6 +232,48 @@ class Scope8CH(QtWidgets.QMainWindow):
                 min-height: 1px;
                 max-height: 1px;
             }
+                            
+            QFrame#channel_box {
+                background-color: #2a2a2a;
+                border: 1px solid #606060;
+                border-radius: 8px;
+            }
+
+            QLabel#ch1_title {
+                color: rgb(255, 255, 0);
+                font-size: 16px;
+                font-weight: bold;
+                padding: 2px;
+            }
+
+            QRadioButton {
+                color: white;
+                font-size: 14px;
+                padding: 3px;
+                spacing: 8px;
+            }
+
+            QRadioButton::indicator {
+                width: 14px;
+                height: 14px;
+                border-radius: 7px;
+                border: 2px solid #d0d0d0;
+                background-color: #202020;
+            }
+
+            QRadioButton::indicator:checked {
+                border: 2px solid rgb(255, 255, 0);
+                background-color: rgb(255, 255, 0);
+            }
+
+            QRadioButton::indicator:unchecked {
+                border: 2px solid #d0d0d0;
+                background-color: #202020;
+            }
+
+            QRadioButton::indicator:hover {
+                border: 2px solid #ffffff;
+            }
         """)
 
         layout = QtWidgets.QVBoxLayout(panel)
@@ -256,6 +299,37 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.btn_run_stop.clicked.connect(self.toggle_run_stop)
         layout.addWidget(self.btn_run_stop)
 
+        # =========================
+        # Recuadro CH1
+        # =========================
+
+        self.ch1_box = QtWidgets.QFrame()
+        self.ch1_box.setObjectName("channel_box")
+
+        ch1_layout = QtWidgets.QVBoxLayout(self.ch1_box)
+        ch1_layout.setContentsMargins(10, 8, 10, 8)
+        ch1_layout.setSpacing(6)
+
+        ch1_title = QtWidgets.QLabel("CH1")
+        ch1_title.setObjectName("ch1_title")
+        ch1_layout.addWidget(ch1_title)
+
+        self.rb_ch1_ac = QtWidgets.QRadioButton("AC")
+        self.rb_ch1_dc = QtWidgets.QRadioButton("DC")
+        self.rb_ch1_off = QtWidgets.QRadioButton("OFF")
+
+        self.rb_ch1_dc.setChecked(True)
+
+        self.rb_ch1_ac.toggled.connect(self.update_ch1_coupling)
+        self.rb_ch1_dc.toggled.connect(self.update_ch1_coupling)
+        self.rb_ch1_off.toggled.connect(self.update_ch1_coupling)
+
+        ch1_layout.addWidget(self.rb_ch1_ac)
+        ch1_layout.addWidget(self.rb_ch1_dc)
+        ch1_layout.addWidget(self.rb_ch1_off)
+
+        layout.addWidget(self.ch1_box)
+
         layout.addStretch()
 
         return panel
@@ -272,28 +346,31 @@ class Scope8CH(QtWidgets.QMainWindow):
 
     def toggle_run_stop(self):
         self.running = not self.running
-
+        self.update_run_stop_button_style()
+        
+            
+    def update_run_stop_button_style(self):
         if self.running:
             self.btn_run_stop.setText("RUN")
             self.btn_run_stop.setStyleSheet("""
-                QPushButton#run_stop_button {
-                    background-color: #145a32;
-                    color: white;
-                    border: 1px solid #2ecc71;
-                    border-radius: 6px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    padding: 6px;
-                }
+            QPushButton#run_stop_button {
+                background-color: #145a32;
+                color: white;
+                border: 1px solid #2ecc71;
+                border-radius: 6px;
+                font-size: 18px;
+                font-weight: bold;
+                padding: 6px;
+            }
 
-                QPushButton#run_stop_button:hover {
-                    background-color: #196f3d;
-                }
+            QPushButton#run_stop_button:hover {
+                background-color: #196f3d;
+            }
 
-                QPushButton#run_stop_button:pressed {
-                    background-color: #0b3d22;
-                }
-            """)
+            QPushButton#run_stop_button:pressed {
+                background-color: #0b3d22;
+            }
+        """)
         else:
             self.btn_run_stop.setText("STOP")
             self.btn_run_stop.setStyleSheet("""
@@ -313,9 +390,18 @@ class Scope8CH(QtWidgets.QMainWindow):
 
                 QPushButton#run_stop_button:pressed {
                     background-color: #641e16;
-            }
+                }
+            """)
             
-        """)
+    def update_ch1_coupling(self):
+        if self.rb_ch1_ac.isChecked():
+            self.ch1_coupling = "AC"
+        elif self.rb_ch1_dc.isChecked():
+            self.ch1_coupling = "DC"
+        elif self.rb_ch1_off.isChecked():
+            self.ch1_coupling = "OFF"
+
+        print(f"CH1 coupling: {self.ch1_coupling}")
 
     def create_right_container(self):
         container = QtWidgets.QFrame()
@@ -326,6 +412,7 @@ class Scope8CH(QtWidgets.QMainWindow):
 
         # Panel derecho principal
         self.side_panel = self.create_side_panel()
+        self.update_run_stop_button_style()
         layout.addWidget(self.side_panel)
 
         # Barra angosta donde queda siempre visible el botón
@@ -452,16 +539,50 @@ class Scope8CH(QtWidgets.QMainWindow):
         if y_all.shape[0] == 0:
             return
 
+        # Eje X en milisegundos.
         x = (np.arange(y_all.shape[0]) / FS_HZ) * 1000.0
 
         # Graficamos los 8 canales todos centrados en Y = 0.
         for ch in range(CH_PHY):
             y = y_all[:, ch]
+
+            # =========================
+            # Acoplamiento CH1
+            # =========================
+            if ch == 0:
+                if self.ch1_coupling == "OFF":
+                    # Oculta la curva de CH1.
+                    self.curves[ch].setData([], [])
+                    continue
+
+                elif self.ch1_coupling == "AC":
+                    # Quita la componente continua.
+                    y = y - np.mean(y)
+
+                elif self.ch1_coupling == "DC":
+                    # Señal normal.
+                    pass
+
             self.curves[ch].setData(x, y)
 
-        # Mediciones de CH1 por ahora.
-        ch1 = y_all[:, 0]
-        med = calcular_mediciones(ch1, FS_HZ)
+
+        # =========================
+        # Mediciones CH1 según acoplamiento
+        # =========================
+
+        y_ch1 = y_all[:, 0]
+
+        if self.ch1_coupling == "OFF":
+            self.text.setText(
+                "CH1\n"
+                "OFF"
+            )
+            return
+
+        elif self.ch1_coupling == "AC":
+            y_ch1 = y_ch1 - np.mean(y_ch1)
+
+        med = calcular_mediciones(y_ch1, FS_HZ)
 
         self.text.setText(
             f"CH1\n"
