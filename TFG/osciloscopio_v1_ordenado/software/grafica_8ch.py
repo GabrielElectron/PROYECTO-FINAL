@@ -278,7 +278,7 @@ def main():
     app = pg.mkQApp("Osciloscopio v1 - 8 canales")
 
     win = Scope8CH()
-    win.show()
+    win.showMaximized()
 
     sys.exit(app.exec())
 
