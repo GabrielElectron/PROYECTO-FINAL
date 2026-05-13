@@ -462,6 +462,9 @@ class Scope8CH(QtWidgets.QMainWindow):
 
         print(f"CH1 coupling: {self.ch1_coupling}")
 
+        # Redibuja aunque estemos en STOP.
+        self.refresh_plot()
+
     def update_ch1_volts_per_div(self, text):
         if "mV/div" in text:
             value_text = text.replace(" mV/div", "")
@@ -478,6 +481,8 @@ class Scope8CH(QtWidgets.QMainWindow):
         )
 
         self.update_ch1_text_position()
+
+        self.refresh_plot()
 
     def format_volts_per_div(self, value):
         if value < 1.0:
@@ -594,15 +599,18 @@ class Scope8CH(QtWidgets.QMainWindow):
         if self.packets <= WARMUP_PACKETS:
             self.last_seq = seq
             self.lost_packets = 0
+
             if not self.running:
                 return
+
         else:
             if self.last_seq is not None and seq != self.last_seq + 1:
                 self.lost_packets += max(0, seq - self.last_seq - 1)
 
             self.last_seq = seq
 
-             # Si está en STOP, congelamos la pantalla.
+            # Si está en STOP, congelamos la pantalla.
+            # No guardamos muestras nuevas en el buffer.
             if not self.running:
                 return
 
@@ -611,27 +619,43 @@ class Scope8CH(QtWidgets.QMainWindow):
 
         n = data_volts.shape[0]
 
+        # Guardamos las muestras en el buffer circular.
         if n >= MAX_POINTS:
             self.buffer[:, :] = data_volts[-MAX_POINTS:, :]
             self.wr = 0
             self.filled = True
+
         else:
             end = self.wr + n
 
             if end <= MAX_POINTS:
                 self.buffer[self.wr:end, :] = data_volts
+
+                # Si justo llenamos el buffer, marcamos filled.
+                if end == MAX_POINTS:
+                    self.filled = True
+
             else:
                 first = MAX_POINTS - self.wr
                 self.buffer[self.wr:, :] = data_volts[:first, :]
-                self.buffer[:end % MAX_POINTS, :] = data_volts[first:, :]
+                self.buffer[:end % MAX_POINTS, :] = data_volts[first:]
                 self.filled = True
 
             self.wr = end % MAX_POINTS
 
+        # Dibuja usando el contenido actual del buffer.
+        self.refresh_plot()
+
+    def get_y_all_from_buffer(self):
         if self.filled:
             y_all = np.vstack((self.buffer[self.wr:, :], self.buffer[:self.wr, :]))
         else:
             y_all = self.buffer[:self.wr, :]
+
+        return y_all
+
+    def refresh_plot(self):
+        y_all = self.get_y_all_from_buffer()
 
         if y_all.shape[0] == 0:
             return
@@ -654,38 +678,32 @@ class Scope8CH(QtWidgets.QMainWindow):
                 elif self.ch1_coupling == "DC":
                     pass
 
-                # Escala vertical SOLO para CH1.
-                # Convertimos volts a divisiones.
                 y_display = y / self.ch1_volts_per_div
 
             else:
-            # Los demás canales quedan sin esta escala por ahora.
-                    # Usamos 1 V/div como referencia visual.
                 y_display = y / 1.0
 
             self.curves[ch].setData(x, y_display)
 
-
         # =========================
-        # Mediciones CH1 según acoplamiento
+        # Mediciones CH1
+        # OFF solo oculta la curva, pero NO deja de medir.
         # =========================
 
-        y_ch1 = y_all[:, 0]
+        y_ch1_med = y_all[:, 0].copy()
+
+        if self.ch1_coupling == "AC":
+            y_ch1_med = y_ch1_med - np.mean(y_ch1_med)
+
+        med = calcular_mediciones(y_ch1_med, FS_HZ)
 
         if self.ch1_coupling == "OFF":
-            self.text.setText(
-                "CH1\n"
-                "OFF"
-            )
-            return
-
-        elif self.ch1_coupling == "AC":
-            y_ch1 = y_ch1 - np.mean(y_ch1)
-
-        med = calcular_mediciones(y_ch1, FS_HZ)
+            estado_ch1 = "OFF visual"
+        else:
+            estado_ch1 = self.ch1_coupling
 
         self.text.setText(
-            f"CH1\n"
+            f"CH1  {estado_ch1}\n"
             f"Vmax: {med['vmax']:.3f} V\n"
             f"Vmin: {med['vmin']:.3f} V\n"
             f"Vpp: {med['vpp']:.3f} V\n"
