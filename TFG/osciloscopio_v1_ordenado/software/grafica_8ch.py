@@ -1,3 +1,4 @@
+from pydoc import text
 import sys
 import struct
 import time
@@ -156,8 +157,16 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.plot.getAxis("left").setStyle(showValues=False)
         self.main_layout.addWidget(self.plot, stretch=1)
         self.running = True
+
         self.ch1_coupling = "DC"
         self.ch1_volts_per_div = 1.0
+        self.ch2_coupling = "DC"
+        self.ch2_volts_per_div = 1.0
+        self.ch3_coupling = "DC"
+        self.ch3_volts_per_div = 1.0
+        self.ch4_coupling = "DC"
+        self.ch4_volts_per_div = 1.0
+
         self.vertical_divisions = 8
 
         # Panel derecho + botón lateral de abrir/cerrar
@@ -307,20 +316,33 @@ class Scope8CH(QtWidgets.QMainWindow):
                 color: white;
                 selection-background-color: #505050;
             }
+                            
+            QLabel#ch2_title {
+                color: rgb(0, 255, 255);
+                font-size: 16px;
+                font-weight: bold;
+                padding: 2px;
+            }
+                            
+            QLabel#ch3_title {
+                color: rgb(255, 0, 255);
+                font-size: 16px;
+                font-weight: bold;
+                padding: 2px;
+            }
+
+            QLabel#ch4_title {
+                color: rgb(0, 255, 0);
+                font-size: 16px;
+                font-weight: bold;
+                padding: 2px;
+            }           
                 
         """)
 
         layout = QtWidgets.QVBoxLayout(panel)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
-
-        title = QtWidgets.QLabel("OSC 8CH")
-        title.setObjectName("panel_title")
-        layout.addWidget(title)
-
-        subtitle = QtWidgets.QLabel("Panel auxiliar")
-        subtitle.setObjectName("panel_subtitle")
-        layout.addWidget(subtitle)
 
         separator = QtWidgets.QFrame()
         separator.setObjectName("separator")
@@ -341,8 +363,8 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.ch1_box.setObjectName("channel_box")
 
         ch1_layout = QtWidgets.QVBoxLayout(self.ch1_box)
-        ch1_layout.setContentsMargins(10, 8, 10, 8)
-        ch1_layout.setSpacing(6)
+        ch1_layout.setContentsMargins(8, 4, 8, 4)
+        ch1_layout.setSpacing(3)
 
         ch1_title = QtWidgets.QLabel("CH1")
         ch1_title.setObjectName("ch1_title")
@@ -358,15 +380,15 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.rb_ch1_dc.toggled.connect(self.update_ch1_coupling)
         self.rb_ch1_off.toggled.connect(self.update_ch1_coupling)
 
-        ch1_layout.addWidget(self.rb_ch1_ac)
-        ch1_layout.addWidget(self.rb_ch1_dc)
-        ch1_layout.addWidget(self.rb_ch1_off)
+        ch1_radio_layout = QtWidgets.QHBoxLayout()
+        ch1_radio_layout.setContentsMargins(0, 0, 0, 0)
+        ch1_radio_layout.setSpacing(10)
 
-        layout.addWidget(self.ch1_box)
+        ch1_radio_layout.addWidget(self.rb_ch1_ac)
+        ch1_radio_layout.addWidget(self.rb_ch1_dc)
+        ch1_radio_layout.addWidget(self.rb_ch1_off)
 
-        vdiv_label = QtWidgets.QLabel("V/div")
-        vdiv_label.setObjectName("small_label")
-        ch1_layout.addWidget(vdiv_label)
+        ch1_layout.addLayout(ch1_radio_layout)
 
         self.combo_ch1_vdiv = QtWidgets.QComboBox()
         self.combo_ch1_vdiv.setObjectName("vdiv_combo")
@@ -388,10 +410,186 @@ class Scope8CH(QtWidgets.QMainWindow):
         self.combo_ch1_vdiv.currentTextChanged.connect(self.update_ch1_volts_per_div)
 
         ch1_layout.addWidget(self.combo_ch1_vdiv)
+        layout.addWidget(self.ch1_box)
+
+        # =========================
+        # Recuadro CH2
+        # =========================
+
+        self.ch2_box = QtWidgets.QFrame()
+        self.ch2_box.setObjectName("channel_box")
+
+        ch2_layout = QtWidgets.QVBoxLayout(self.ch2_box)
+        ch2_layout.setContentsMargins(8, 4, 8, 4)
+        ch2_layout.setSpacing(3)
+
+        ch2_title = QtWidgets.QLabel("CH2")
+        ch2_title.setObjectName("ch2_title")
+        ch2_layout.addWidget(ch2_title)
+
+        self.rb_ch2_ac = QtWidgets.QRadioButton("AC")
+        self.rb_ch2_dc = QtWidgets.QRadioButton("DC")
+        self.rb_ch2_off = QtWidgets.QRadioButton("OFF")
+
+        self.rb_ch2_dc.setChecked(True)
+
+        self.rb_ch2_ac.toggled.connect(self.update_ch2_coupling)
+        self.rb_ch2_dc.toggled.connect(self.update_ch2_coupling)
+        self.rb_ch2_off.toggled.connect(self.update_ch2_coupling)
+
+        ch2_radio_layout = QtWidgets.QHBoxLayout()
+        ch2_radio_layout.setContentsMargins(0, 0, 0, 0)
+        ch2_radio_layout.setSpacing(10)
+
+        ch2_radio_layout.addWidget(self.rb_ch2_ac)
+        ch2_radio_layout.addWidget(self.rb_ch2_dc)
+        ch2_radio_layout.addWidget(self.rb_ch2_off)
+
+        ch2_layout.addLayout(ch2_radio_layout)
+
+        self.combo_ch2_vdiv = QtWidgets.QComboBox()
+        self.combo_ch2_vdiv.setObjectName("vdiv_combo")
+
+        self.combo_ch2_vdiv.addItems([
+            "10 mV/div",
+            "20 mV/div",
+            "50 mV/div",
+            "100 mV/div",
+            "200 mV/div",
+            "500 mV/div",
+            "1 V/div",
+            "2 V/div",
+            "5 V/div",
+            "10 V/div",
+        ])
+
+        self.combo_ch2_vdiv.setCurrentText("1 V/div")
+        self.combo_ch2_vdiv.currentTextChanged.connect(self.update_ch2_volts_per_div)
+
+        ch2_layout.addWidget(self.combo_ch2_vdiv)
+
+        layout.addWidget(self.ch2_box)
+
+        # =========================
+        # Recuadro CH3
+        # =========================
+
+        self.ch3_box = QtWidgets.QFrame()
+        self.ch3_box.setObjectName("channel_box")
+
+        ch3_layout = QtWidgets.QVBoxLayout(self.ch3_box)
+        ch3_layout.setContentsMargins(8, 4, 8, 4)
+        ch3_layout.setSpacing(3)
+
+        ch3_title = QtWidgets.QLabel("CH3")
+        ch3_title.setObjectName("ch3_title")
+        ch3_layout.addWidget(ch3_title)
+
+        self.rb_ch3_ac = QtWidgets.QRadioButton("AC")
+        self.rb_ch3_dc = QtWidgets.QRadioButton("DC")
+        self.rb_ch3_off = QtWidgets.QRadioButton("OFF")
+
+        self.rb_ch3_dc.setChecked(True)
+
+        self.rb_ch3_ac.toggled.connect(self.update_ch3_coupling)
+        self.rb_ch3_dc.toggled.connect(self.update_ch3_coupling)
+        self.rb_ch3_off.toggled.connect(self.update_ch3_coupling)
+
+        ch3_radio_layout = QtWidgets.QHBoxLayout()
+        ch3_radio_layout.setContentsMargins(0, 0, 0, 0)
+        ch3_radio_layout.setSpacing(10)
+
+        ch3_radio_layout.addWidget(self.rb_ch3_ac)
+        ch3_radio_layout.addWidget(self.rb_ch3_dc)
+        ch3_radio_layout.addWidget(self.rb_ch3_off)
+
+        ch3_layout.addLayout(ch3_radio_layout)
+
+        self.combo_ch3_vdiv = QtWidgets.QComboBox()
+        self.combo_ch3_vdiv.setObjectName("vdiv_combo")
+
+        self.combo_ch3_vdiv.addItems([
+            "10 mV/div",
+            "20 mV/div",
+            "50 mV/div",
+            "100 mV/div",
+            "200 mV/div",
+            "500 mV/div",
+            "1 V/div",
+            "2 V/div",
+            "5 V/div",
+            "10 V/div",
+        ])
+
+        self.combo_ch3_vdiv.setCurrentText("1 V/div")
+        self.combo_ch3_vdiv.currentTextChanged.connect(self.update_ch3_volts_per_div)
+
+        ch3_layout.addWidget(self.combo_ch3_vdiv)
+
+        layout.addWidget(self.ch3_box)
+
+        # =========================
+        # Recuadro CH4
+        # =========================
+
+        self.ch4_box = QtWidgets.QFrame()
+        self.ch4_box.setObjectName("channel_box")
+
+        ch4_layout = QtWidgets.QVBoxLayout(self.ch4_box)
+        ch4_layout.setContentsMargins(8, 4, 8, 4)
+        ch4_layout.setSpacing(3)
+
+        ch4_title = QtWidgets.QLabel("CH4")
+        ch4_title.setObjectName("ch4_title")
+        ch4_layout.addWidget(ch4_title)
+
+        self.rb_ch4_ac = QtWidgets.QRadioButton("AC")
+        self.rb_ch4_dc = QtWidgets.QRadioButton("DC")
+        self.rb_ch4_off = QtWidgets.QRadioButton("OFF")
+
+        self.rb_ch4_dc.setChecked(True)
+
+        self.rb_ch4_ac.toggled.connect(self.update_ch4_coupling)
+        self.rb_ch4_dc.toggled.connect(self.update_ch4_coupling)
+        self.rb_ch4_off.toggled.connect(self.update_ch4_coupling)
+
+        ch4_radio_layout = QtWidgets.QHBoxLayout()
+        ch4_radio_layout.setContentsMargins(0, 0, 0, 0)
+        ch4_radio_layout.setSpacing(10)
+
+        ch4_radio_layout.addWidget(self.rb_ch4_ac)
+        ch4_radio_layout.addWidget(self.rb_ch4_dc)
+        ch4_radio_layout.addWidget(self.rb_ch4_off)
+
+        ch4_layout.addLayout(ch4_radio_layout)
+
+        self.combo_ch4_vdiv = QtWidgets.QComboBox()
+        self.combo_ch4_vdiv.setObjectName("vdiv_combo")
+
+        self.combo_ch4_vdiv.addItems([
+            "10 mV/div",
+            "20 mV/div",
+            "50 mV/div",
+            "100 mV/div",
+            "200 mV/div",
+            "500 mV/div",
+            "1 V/div",
+            "2 V/div",
+            "5 V/div",
+            "10 V/div",
+        ])
+
+        self.combo_ch4_vdiv.setCurrentText("1 V/div")
+        self.combo_ch4_vdiv.currentTextChanged.connect(self.update_ch4_volts_per_div)
+
+        ch4_layout.addWidget(self.combo_ch4_vdiv)
+
+        layout.addWidget(self.ch4_box)
 
         layout.addStretch()
 
         return panel
+
 
     def toggle_side_panel(self):
         if self.side_panel.isVisible():
@@ -482,6 +680,85 @@ class Scope8CH(QtWidgets.QMainWindow):
 
         self.update_ch1_text_position()
 
+        self.refresh_plot()
+
+    def update_ch2_coupling(self):
+        if self.rb_ch2_ac.isChecked():
+            self.ch2_coupling = "AC"
+        elif self.rb_ch2_dc.isChecked():
+            self.ch2_coupling = "DC"
+        elif self.rb_ch2_off.isChecked():
+            self.ch2_coupling = "OFF"
+
+        print(f"CH2 coupling: {self.ch2_coupling}")
+
+        # Redibuja aunque estemos en STOP.
+        self.refresh_plot()
+
+    def update_ch2_volts_per_div(self, text):
+        if "mV/div" in text:
+            value_text = text.replace(" mV/div", "")
+            self.ch2_volts_per_div = float(value_text) / 1000.0
+
+        elif "V/div" in text:
+            value_text = text.replace(" V/div", "")
+            self.ch2_volts_per_div = float(value_text)
+
+        print(f"CH2 V/div: {self.ch2_volts_per_div}")
+
+        # Redibuja aunque estemos en STOP.
+        self.refresh_plot()
+
+    def update_ch3_coupling(self):
+        if self.rb_ch3_ac.isChecked():
+            self.ch3_coupling = "AC"
+        elif self.rb_ch3_dc.isChecked():
+            self.ch3_coupling = "DC"
+        elif self.rb_ch3_off.isChecked():
+            self.ch3_coupling = "OFF"
+
+        print(f"CH3 coupling: {self.ch3_coupling}")
+
+        # Redibuja aunque estemos en STOP.
+        self.refresh_plot()
+
+    
+    def update_ch3_volts_per_div(self, text):
+        if "mV/div" in text:
+            value_text = text.replace(" mV/div", "")
+            self.ch3_volts_per_div = float(value_text) / 1000.0
+
+        elif "V/div" in text:
+            value_text = text.replace(" V/div", "")
+            self.ch3_volts_per_div = float(value_text)
+
+        print(f"CH3 V/div: {self.ch3_volts_per_div}")
+
+        # Redibuja aunque estemos en STOP.
+        self.refresh_plot()
+
+    def update_ch4_coupling(self):
+        if self.rb_ch4_ac.isChecked():
+            self.ch4_coupling = "AC"
+        elif self.rb_ch4_dc.isChecked():
+            self.ch4_coupling = "DC"
+        elif self.rb_ch4_off.isChecked():
+            self.ch4_coupling = "OFF"
+
+        print(f"CH4 coupling: {self.ch4_coupling}")
+        self.refresh_plot()
+
+
+    def update_ch4_volts_per_div(self, text):
+        if "mV/div" in text:
+            value_text = text.replace(" mV/div", "")
+            self.ch4_volts_per_div = float(value_text) / 1000.0
+
+        elif "V/div" in text:
+            value_text = text.replace(" V/div", "")
+            self.ch4_volts_per_div = float(value_text)
+
+        print(f"CH4 V/div: {self.ch4_volts_per_div}")
         self.refresh_plot()
 
     def format_volts_per_div(self, value):
@@ -675,10 +952,37 @@ class Scope8CH(QtWidgets.QMainWindow):
                 elif self.ch1_coupling == "AC":
                     y = y - np.mean(y)
 
-                elif self.ch1_coupling == "DC":
-                    pass
-
                 y_display = y / self.ch1_volts_per_div
+
+            elif ch == 1:
+                if self.ch2_coupling == "OFF":
+                    self.curves[ch].setData([], [])
+                    continue
+
+                elif self.ch2_coupling == "AC":
+                    y = y - np.mean(y)
+
+                y_display = y / self.ch2_volts_per_div
+
+            elif ch == 2:
+                if self.ch3_coupling == "OFF":
+                    self.curves[ch].setData([], [])
+                    continue
+
+                elif self.ch3_coupling == "AC":
+                    y = y - np.mean(y)
+
+                y_display = y / self.ch3_volts_per_div
+
+            elif ch == 3:
+                if self.ch4_coupling == "OFF":
+                    self.curves[ch].setData([], [])
+                    continue
+
+                elif self.ch4_coupling == "AC":
+                    y = y - np.mean(y)
+
+                y_display = y / self.ch4_volts_per_div
 
             else:
                 y_display = y / 1.0
